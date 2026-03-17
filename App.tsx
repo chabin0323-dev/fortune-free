@@ -16,7 +16,7 @@ function HomePage() {
   );
 }
 
-export default function App() {
+export default function CompatibilityFreePage() {
   return (
     <BrowserRouter>
       <Routes>
