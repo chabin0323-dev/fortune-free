@@ -5,13 +5,15 @@ function HomePage() {
   return (
     <div
       style={{
-        backgroundColor: 'white',
         minHeight: '100vh',
         padding: '40px',
+        backgroundColor: '#ffffff',
+        color: '#111111',
       }}
     >
-      <h1 style={{ color: 'black' }}>トップページです</h1>
-      <p style={{ color: 'black' }}>ここは確認用のホームです。</p>
+      <h1>トップページです</h1>
+      <p>ここは確認用のホームです。</p>
+      <a href="/compatibility-free">無料版へ</a>
     </div>
   );
 }
