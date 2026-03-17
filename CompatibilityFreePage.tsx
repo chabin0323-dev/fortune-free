@@ -1,316 +1,773 @@
-import { useEffect, useState } from 'react';
+import React, { useMemo, useState } from 'react';
+
+type TabType = 'today' | 'tomorrow';
+
+const BLOOD_TYPES = ['血液型', 'A型', 'B型', 'O型', 'AB型'];
+const ETO = ['干支', '子', '丑', '寅', '卯', '辰', '巳', '午', '未', '申', '酉', '戌', '亥'];
+const SIGNS = [
+  '星座',
+  '牡羊座',
+  '牡牛座',
+  '双子座',
+  '蟹座',
+  '獅子座',
+  '乙女座',
+  '天秤座',
+  '蠍座',
+  '射手座',
+  '山羊座',
+  '水瓶座',
+  '魚座',
+];
+const RELATIONS = [
+  '現在の関係性',
+  '片想い',
+  '友達以上恋人未満',
+  '恋人',
+  '復縁',
+  '夫婦',
+  '複雑な関係',
+];
+
+const YEARS = ['年', ...Array.from({ length: 50 }, (_, i) => String(1980 + i))];
+const MONTHS = ['月', ...Array.from({ length: 12 }, (_, i) => String(i + 1))];
+const DAYS = ['日', ...Array.from({ length: 31 }, (_, i) => String(i + 1))];
+
+function SelectBox({
+  value,
+  onChange,
+  options,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  options: string[];
+}) {
+  return (
+    <select
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      style={{
+        width: '100%',
+        height: '60px',
+        borderRadius: '16px',
+        padding: '0 18px',
+        border: '1px solid rgba(255,255,255,0.08)',
+        outline: 'none',
+        color: '#fff',
+        fontSize: '17px',
+        fontWeight: 600,
+        background: 'rgba(20, 12, 44, 0.72)',
+        boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.05)',
+        backdropFilter: 'blur(10px)',
+      }}
+    >
+      {options.map((item) => (
+        <option key={item} value={item} style={{ color: '#111' }}>
+          {item}
+        </option>
+      ))}
+    </select>
+  );
+}
 
 export default function CompatibilityFreePage() {
+  const [tab, setTab] = useState<TabType>('today');
 
-  const [name1, setName1] = useState('');
-  const [name2, setName2] = useState('');
+  const [bloodType, setBloodType] = useState('血液型');
+  const [eto, setEto] = useState('干支');
+  const [sign, setSign] = useState('星座');
+  const [year, setYear] = useState('年');
+  const [month, setMonth] = useState('月');
+  const [day, setDay] = useState('日');
 
-  const [blood1, setBlood1] = useState('');
-  const [blood2, setBlood2] = useState('');
+  const [partnerName, setPartnerName] = useState('');
+  const [relation, setRelation] = useState('現在の関係性');
 
-  const [zodiac1, setZodiac1] = useState('');
-  const [zodiac2, setZodiac2] = useState('');
+  const [resultVisible, setResultVisible] = useState(false);
+  const [remainingCount, setRemainingCount] = useState(4);
+  const [errorText, setErrorText] = useState('');
 
-  const [year1, setYear1] = useState('');
-  const [month1, setMonth1] = useState('');
-  const [day1, setDay1] = useState('');
+  const todayLabel = useMemo(() => '本日 (3/17)', []);
+  const tomorrowLabel = useMemo(() => '明日 (3/18)', []);
 
-  const [year2, setYear2] = useState('');
-  const [month2, setMonth2] = useState('');
-  const [day2, setDay2] = useState('');
-
-  const [eto1, setEto1] = useState('');
-  const [eto2, setEto2] = useState('');
-
-  const [result, setResult] = useState('');
-  const [count, setCount] = useState(0);
-
-  const years = Array.from({ length: 46 }, (_, i) => String(1980 + i));
-  const months = Array.from({ length: 12 }, (_, i) => String(i + 1));
-  const days = Array.from({ length: 31 }, (_, i) => String(i + 1));
-  const etoList = ['子','丑','寅','卯','辰','巳','午','未','申','酉','戌','亥'];
-
-  const todayKey = new Date().toLocaleDateString('ja-JP');
-  const storageDateKey = 'compatibilityFreeDate';
-  const storageCountKey = 'compatibilityFreeCount';
-
-  useEffect(() => {
-
-    const savedDate = localStorage.getItem(storageDateKey);
-    const savedCount = localStorage.getItem(storageCountKey);
-
-    if (savedDate === todayKey) {
-      setCount(savedCount ? Number(savedCount) : 0);
-    } else {
-      localStorage.setItem(storageDateKey, todayKey);
-      localStorage.setItem(storageCountKey, '0');
-      setCount(0);
-    }
-
-    // ページ読み込み時は結果を消す
-    setResult('');
-
-  }, [todayKey]);
-
-  const handleCheck = () => {
-
-    const hasAnyInput = [
-      name1,name2,
-      blood1,blood2,
-      zodiac1,zodiac2,
-      year1,month1,day1,
-      year2,month2,day2,
-      eto1,eto2
-    ].some(v => v !== '');
+  const handleFortune = () => {
+    const hasAnyInput =
+      bloodType !== '血液型' ||
+      eto !== '干支' ||
+      sign !== '星座' ||
+      year !== '年' ||
+      month !== '月' ||
+      day !== '日' ||
+      partnerName.trim() !== '' ||
+      relation !== '現在の関係性';
 
     if (!hasAnyInput) {
-      setResult('どれか1つ入力してください。');
+      setErrorText('1つ以上入力してから鑑定してください');
+      setResultVisible(false);
       return;
     }
 
-    // 開発中は999にする（公開前に5へ戻す）
-    if (count >= 999) {
-      setResult('本日の無料鑑定は5回までです。');
+    if (remainingCount <= 0) {
+      setErrorText('本日の無料鑑定回数を使い切りました');
+      setResultVisible(false);
       return;
     }
 
-    const nextCount = count + 1;
-    setCount(nextCount);
-
-    localStorage.setItem(storageDateKey, todayKey);
-    localStorage.setItem(storageCountKey, String(nextCount));
-
-    const mainName = name1 || name2 || 'あなた';
-    const partnerName = name1 && name2 ? name2 : 'お相手';
-
-    const messages = [
-      '今は焦らず関係を温める時期です。',
-      '自然な会話を増やすことで距離が縮まりやすいです。',
-      '優しい言葉が2人の関係を良くします。',
-      '今は相手の気持ちを大切にする時期です。',
-      '小さな行動が恋を前進させます。'
-    ];
-
-    const advice = [
-      'まずは短い会話を増やしてみましょう。',
-      '相手を追いすぎないことが大切です。',
-      '焦らないことが成功の鍵です。',
-      '自然体で接するのが良いでしょう。',
-      '相手を理解しようとする姿勢が大切です。'
-    ];
-
-    const msg = messages[Math.floor(Math.random()*messages.length)];
-    const adv = advice[Math.floor(Math.random()*advice.length)];
-
-    setResult(
-`${mainName}さんと${partnerName}の無料鑑定結果です。
-
-${msg}
-
-【ワンポイント】
-${adv}
-
-本日の無料鑑定回数は ${Math.min(nextCount,5)} / 5 です。`
-    );
-  };
-
-  const handleProClick = () => {
-    window.location.href = '/compatibility-pro';
-  };
-
-  const inputStyle = {
-    display:'block' as const,
-    marginBottom:'10px',
-    padding:'12px',
-    width:'280px',
-    borderRadius:'10px',
-    border:'1px solid #ccc',
-    fontSize:'16px'
-  };
-
-  const selectStyle = {
-    display:'block' as const,
-    marginBottom:'10px',
-    padding:'12px',
-    width:'306px',
-    borderRadius:'10px',
-    border:'1px solid #ccc',
-    fontSize:'16px',
-    backgroundColor:'white'
+    setErrorText('');
+    setResultVisible(true);
+    setRemainingCount((prev) => Math.max(prev - 1, 0));
   };
 
   return (
+    <div
+      style={{
+        minHeight: '100vh',
+        position: 'relative',
+        overflow: 'hidden',
+        background:
+          'radial-gradient(circle at 20% 15%, rgba(119, 56, 255, 0.32) 0%, rgba(119, 56, 255, 0) 30%), radial-gradient(circle at 85% 20%, rgba(255, 70, 193, 0.23) 0%, rgba(255, 70, 193, 0) 25%), radial-gradient(circle at 50% 100%, rgba(71, 143, 255, 0.22) 0%, rgba(71, 143, 255, 0) 35%), linear-gradient(180deg, #1b1038 0%, #120925 45%, #090312 100%)',
+        fontFamily:
+          '"Hiragino Sans", "Yu Gothic", "Meiryo", sans-serif',
+        color: '#fff',
+      }}
+    >
+      <div
+        style={{
+          position: 'fixed',
+          inset: 0,
+          pointerEvents: 'none',
+          opacity: 0.65,
+          backgroundImage:
+            'radial-gradient(2px 2px at 20px 30px, rgba(255,255,255,0.8), transparent), radial-gradient(1.5px 1.5px at 120px 80px, rgba(255,255,255,0.5), transparent), radial-gradient(2px 2px at 240px 160px, rgba(255,255,255,0.6), transparent), radial-gradient(1.5px 1.5px at 340px 40px, rgba(255,255,255,0.5), transparent), radial-gradient(2px 2px at 500px 130px, rgba(255,255,255,0.7), transparent)',
+          backgroundSize: '600px 300px',
+        }}
+      />
 
-<div style={{
-background:'#f7f8fc',
-minHeight:'100vh',
-padding:'24px'
-}}>
+      <div
+        style={{
+          maxWidth: '860px',
+          margin: '0 auto',
+          padding: '46px 20px 80px',
+          position: 'relative',
+          zIndex: 1,
+        }}
+      >
+        <div
+          style={{
+            background: 'rgba(88, 43, 143, 0.45)',
+            border: '1px solid rgba(255,255,255,0.10)',
+            borderRadius: '34px',
+            padding: '28px 18px 32px',
+            backdropFilter: 'blur(18px)',
+            boxShadow:
+              '0 20px 60px rgba(0,0,0,0.35), 0 0 50px rgba(172, 76, 255, 0.15)',
+          }}
+        >
+          <div
+            style={{
+              fontSize: '54px',
+              fontWeight: 900,
+              lineHeight: 1.05,
+              letterSpacing: '0.02em',
+              marginBottom: '10px',
+              background: 'linear-gradient(90deg, #ff9b5f, #ffd95f, #73d2ff, #c77dff)',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+              textShadow: '0 0 24px rgba(255,255,255,0.12)',
+            }}
+          >
+            AI相性占い
+          </div>
 
-<div style={{
-maxWidth:'420px',
-margin:'0 auto',
-background:'white',
-borderRadius:'20px',
-padding:'24px',
-boxShadow:'0 8px 24px rgba(0,0,0,0.08)'
-}}>
+          <div
+            style={{
+              color: 'rgba(255,255,255,0.75)',
+              fontSize: '20px',
+              fontWeight: 600,
+              marginBottom: '34px',
+            }}
+          >
+            二人の星が織りなす、運命の物語
+          </div>
 
-<h1 style={{
-color:'#222',
-fontSize:'28px',
-marginBottom:'8px',
-textAlign:'center'
-}}>
-無料相性占い
-</h1>
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: '1fr 1fr',
+              gap: '18px',
+            }}
+          >
+            <div
+              style={{
+                background: 'rgba(25, 12, 53, 0.42)',
+                borderRadius: '22px',
+                padding: '18px',
+                border: '1px solid rgba(255,255,255,0.07)',
+              }}
+            >
+              <div
+                style={{
+                  fontSize: '16px',
+                  fontWeight: 800,
+                  color: '#ff98ef',
+                  marginBottom: '16px',
+                }}
+              >
+                ● あなた
+              </div>
 
-<p style={{
-color:'#666',
-textAlign:'center',
-marginBottom:'20px'
-}}>
-分かる情報だけでも鑑定できます
-</p>
+              <div
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: '1fr 1fr',
+                  gap: '14px',
+                  marginBottom: '14px',
+                }}
+              >
+                <SelectBox value={bloodType} onChange={setBloodType} options={BLOOD_TYPES} />
+                <SelectBox value={eto} onChange={setEto} options={ETO} />
+              </div>
 
-<p style={{
-textAlign:'center',
-fontWeight:'bold',
-marginBottom:'20px'
-}}>
-本日の無料鑑定回数: {Math.min(count,5)} / 5
-</p>
+              <div style={{ marginBottom: '14px' }}>
+                <SelectBox value={sign} onChange={setSign} options={SIGNS} />
+              </div>
 
-<h2>1人目</h2>
+              <div
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: '1fr 1fr 1fr',
+                  gap: '10px',
+                }}
+              >
+                <SelectBox value={year} onChange={setYear} options={YEARS} />
+                <SelectBox value={month} onChange={setMonth} options={MONTHS} />
+                <SelectBox value={day} onChange={setDay} options={DAYS} />
+              </div>
+            </div>
 
-<input
-placeholder="1人目の名前"
-value={name1}
-onChange={(e)=>setName1(e.target.value)}
-style={inputStyle}
-/>
+            <div
+              style={{
+                background: 'rgba(25, 12, 53, 0.42)',
+                borderRadius: '22px',
+                padding: '18px',
+                border: '1px solid rgba(255,255,255,0.07)',
+              }}
+            >
+              <div
+                style={{
+                  fontSize: '16px',
+                  fontWeight: 800,
+                  color: '#73e6ff',
+                  marginBottom: '16px',
+                }}
+              >
+                ● お相手
+              </div>
 
-<select value={blood1} onChange={(e)=>setBlood1(e.target.value)} style={selectStyle}>
-<option value="">血液型</option>
-<option value="A">A型</option>
-<option value="B">B型</option>
-<option value="O">O型</option>
-<option value="AB">AB型</option>
-</select>
+              <input
+                type="text"
+                placeholder="お名前を入力"
+                value={partnerName}
+                onChange={(e) => setPartnerName(e.target.value)}
+                style={{
+                  width: '100%',
+                  height: '60px',
+                  borderRadius: '16px',
+                  padding: '0 18px',
+                  border: '1px solid rgba(255,255,255,0.08)',
+                  outline: 'none',
+                  color: '#fff',
+                  fontSize: '17px',
+                  fontWeight: 600,
+                  background: 'rgba(20, 12, 44, 0.72)',
+                  boxSizing: 'border-box',
+                  marginBottom: '14px',
+                }}
+              />
 
-<select value={zodiac1} onChange={(e)=>setZodiac1(e.target.value)} style={selectStyle}>
-<option value="">星座</option>
-<option value="牡羊座">牡羊座</option>
-<option value="牡牛座">牡牛座</option>
-<option value="双子座">双子座</option>
-<option value="蟹座">蟹座</option>
-<option value="獅子座">獅子座</option>
-<option value="乙女座">乙女座</option>
-<option value="天秤座">天秤座</option>
-<option value="蠍座">蠍座</option>
-<option value="射手座">射手座</option>
-<option value="山羊座">山羊座</option>
-<option value="水瓶座">水瓶座</option>
-<option value="魚座">魚座</option>
-</select>
+              <SelectBox value={relation} onChange={setRelation} options={RELATIONS} />
 
-<div style={{display:'flex',gap:'8px'}}>
+              <div
+                style={{
+                  marginTop: '18px',
+                  padding: '14px 16px',
+                  borderRadius: '16px',
+                  background: 'linear-gradient(90deg, rgba(255,215,100,0.10), rgba(255,120,220,0.08))',
+                  border: '1px solid rgba(255,215,100,0.18)',
+                  color: 'rgba(255,255,255,0.82)',
+                  fontSize: '14px',
+                  lineHeight: 1.7,
+                }}
+              >
+                あなたとお相手の波動を読み取り、
+                <br />
+                無料版では“入口”まで特別に公開します。
+              </div>
+            </div>
+          </div>
 
-<select value={year1} onChange={(e)=>setYear1(e.target.value)} style={{...selectStyle,width:'100px'}}>
-<option value="">年</option>
-{years.map(y=> <option key={y}>{y}</option>)}
-</select>
+          <div
+            style={{
+              marginTop: '28px',
+              display: 'flex',
+              flexWrap: 'wrap',
+              alignItems: 'center',
+              gap: '12px',
+              paddingTop: '22px',
+              borderTop: '1px solid rgba(255,255,255,0.08)',
+            }}
+          >
+            <div
+              style={{
+                display: 'inline-flex',
+                background: 'rgba(26, 10, 49, 0.9)',
+                padding: '6px',
+                borderRadius: '16px',
+                border: '1px solid rgba(255,255,255,0.06)',
+              }}
+            >
+              <button
+                onClick={() => setTab('today')}
+                style={{
+                  border: 'none',
+                  height: '42px',
+                  padding: '0 22px',
+                  borderRadius: '12px',
+                  color: '#fff',
+                  cursor: 'pointer',
+                  fontWeight: 800,
+                  fontSize: '15px',
+                  background:
+                    tab === 'today'
+                      ? 'linear-gradient(90deg, #ff31c8, #d54eff)'
+                      : 'transparent',
+                  boxShadow:
+                    tab === 'today'
+                      ? '0 0 18px rgba(255,49,200,0.35)'
+                      : 'none',
+                }}
+              >
+                {todayLabel}
+              </button>
 
-<select value={month1} onChange={(e)=>setMonth1(e.target.value)} style={{...selectStyle,width:'90px'}}>
-<option value="">月</option>
-{months.map(m=> <option key={m}>{m}</option>)}
-</select>
+              <button
+                onClick={() => setTab('tomorrow')}
+                style={{
+                  border: 'none',
+                  height: '42px',
+                  padding: '0 22px',
+                  borderRadius: '12px',
+                  color: '#fff',
+                  cursor: 'pointer',
+                  fontWeight: 800,
+                  fontSize: '15px',
+                  background:
+                    tab === 'tomorrow'
+                      ? 'linear-gradient(90deg, #6f5bff, #3cc8ff)'
+                      : 'transparent',
+                  boxShadow:
+                    tab === 'tomorrow'
+                      ? '0 0 18px rgba(60,200,255,0.28)'
+                      : 'none',
+                }}
+              >
+                {tomorrowLabel}
+              </button>
+            </div>
 
-<select value={day1} onChange={(e)=>setDay1(e.target.value)} style={{...selectStyle,width:'90px'}}>
-<option value="">日</option>
-{days.map(d=> <option key={d}>{d}</option>)}
-</select>
+            <div
+              style={{
+                padding: '10px 16px',
+                borderRadius: '14px',
+                fontWeight: 800,
+                fontSize: '15px',
+                color: '#fff',
+                border: '1px solid rgba(255,255,255,0.10)',
+                background: 'rgba(255,255,255,0.06)',
+                boxShadow: '0 0 20px rgba(255,255,255,0.03)',
+              }}
+            >
+              無料版 本日の残り：
+              <span style={{ color: '#ffd95f' }}>{remainingCount}回</span>
+            </div>
+          </div>
 
-</div>
+          <div style={{ marginTop: '22px' }}>
+            <button
+              onClick={handleFortune}
+              style={{
+                width: '100%',
+                height: '74px',
+                border: 'none',
+                borderRadius: '22px',
+                cursor: 'pointer',
+                color: '#fff',
+                fontSize: '21px',
+                fontWeight: 900,
+                letterSpacing: '0.05em',
+                background: 'linear-gradient(90deg, #e12cff, #7c5cff 60%, #4f65ff)',
+                boxShadow:
+                  '0 0 30px rgba(225,44,255,0.35), 0 0 60px rgba(79,101,255,0.22)',
+              }}
+            >
+              運命を占う
+            </button>
+          </div>
 
-<select value={eto1} onChange={(e)=>setEto1(e.target.value)} style={selectStyle}>
-<option value="">干支</option>
-{etoList.map(e=> <option key={e}>{e}</option>)}
-</select>
+          {errorText && (
+            <div
+              style={{
+                marginTop: '14px',
+                padding: '14px 16px',
+                borderRadius: '14px',
+                background: 'rgba(255, 72, 129, 0.12)',
+                border: '1px solid rgba(255, 72, 129, 0.28)',
+                color: '#ffd2e2',
+                fontWeight: 700,
+              }}
+            >
+              {errorText}
+            </div>
+          )}
+        </div>
 
-<h2>2人目</h2>
+        {resultVisible && (
+          <div style={{ marginTop: '26px' }}>
+            <div
+              style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                flexWrap: 'wrap',
+                gap: '12px',
+                marginBottom: '16px',
+              }}
+            >
+              <div
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  padding: '10px 16px',
+                  borderRadius: '999px',
+                  border: '1px solid rgba(255,100,220,0.28)',
+                  background: 'rgba(255, 90, 210, 0.08)',
+                  color: '#ffb0ef',
+                  fontWeight: 800,
+                  fontSize: '14px',
+                }}
+              >
+                ● 無料版ダイジェスト表示
+              </div>
 
-<input
-placeholder="2人目の名前"
-value={name2}
-onChange={(e)=>setName2(e.target.value)}
-style={inputStyle}
-/>
+              <button
+                style={{
+                  border: 'none',
+                  padding: '14px 24px',
+                  borderRadius: '999px',
+                  color: '#fff',
+                  cursor: 'pointer',
+                  fontWeight: 900,
+                  fontSize: '16px',
+                  background: 'linear-gradient(90deg, #ff67c8, #9f58ff)',
+                  boxShadow:
+                    '0 0 22px rgba(255,103,200,0.30), 0 0 42px rgba(159,88,255,0.20)',
+                }}
+              >
+                完全版を見る
+              </button>
+            </div>
 
-<button
-onClick={handleCheck}
-style={{
-width:'100%',
-padding:'14px',
-borderRadius:'12px',
-border:'none',
-background:'#4f46e5',
-color:'white',
-fontSize:'16px',
-fontWeight:'bold',
-cursor:'pointer',
-marginTop:'20px'
-}}
->
-鑑定する
-</button>
+            <div
+              style={{
+                borderRadius: '30px',
+                padding: '40px 28px',
+                background:
+                  'linear-gradient(180deg, rgba(20, 5, 35, 0.98) 0%, rgba(12, 4, 24, 0.98) 100%)',
+                border: '1px solid rgba(255,255,255,0.06)',
+                backdropFilter: 'blur(20px)',
+                boxShadow:
+                  '0 20px 70px rgba(0,0,0,0.45), 0 0 50px rgba(173, 70, 255, 0.14)',
+              }}
+            >
+              <div
+                style={{
+                  color: 'rgba(255,255,255,0.58)',
+                  fontSize: '15px',
+                  fontWeight: 700,
+                  marginBottom: '14px',
+                }}
+              >
+                2026年3月17日 / あなた × {partnerName || 'お相手'}
+              </div>
 
-{result && (
+              <h2
+                style={{
+                  fontSize: 'clamp(34px, 5vw, 56px)',
+                  lineHeight: 1.16,
+                  margin: '0 0 28px',
+                  fontWeight: 900,
+                  letterSpacing: '-0.03em',
+                }}
+              >
+                今日の二人は
+                <span
+                  style={{
+                    background: 'linear-gradient(90deg, #ffd66b, #ff86da)',
+                    WebkitBackgroundClip: 'text',
+                    WebkitTextFillColor: 'transparent',
+                  }}
+                >
+                  「深く結ばれやすい相性」
+                </span>
+                の流れに入っています
+              </h2>
 
-<div style={{
-whiteSpace:'pre-line',
-background:'#f3f4f6',
-borderRadius:'14px',
-padding:'16px',
-marginTop:'20px'
-}}>
-{result}
-</div>
+              <section style={{ marginBottom: '28px' }}>
+                <div
+                  style={{
+                    fontSize: '18px',
+                    fontWeight: 900,
+                    color: '#ff9ce8',
+                    marginBottom: '12px',
+                  }}
+                >
+                  総合鑑定
+                </div>
+                <div
+                  style={{
+                    color: 'rgba(255,255,255,0.92)',
+                    fontSize: '17px',
+                    lineHeight: 2,
+                  }}
+                >
+                  {partnerName || 'お相手'}との相性は、今日は水面下で深まりやすい流れがあります。
+                  まだ形になっていないご縁でも、印象が育ちやすいタイミングです。
+                  あなたの誠実さと慎重さは、相手に安心感を与えやすい魅力として映っています。
+                  今日は表面の動きよりも、見えない部分の感情が静かに強まりやすい日です。
+                </div>
+              </section>
 
-)}
+              <section style={{ marginBottom: '28px' }}>
+                <div
+                  style={{
+                    fontSize: '18px',
+                    fontWeight: 900,
+                    color: '#ff9ce8',
+                    marginBottom: '12px',
+                  }}
+                >
+                  相手の気持ち
+                </div>
+                <div
+                  style={{
+                    color: 'rgba(255,255,255,0.92)',
+                    fontSize: '17px',
+                    lineHeight: 2,
+                  }}
+                >
+                  {partnerName || 'お相手'}は、あなたに対して単なる好印象以上の意識を持っている可能性があります。
+                  ただし今日は、気持ちを表に出すより、内側で確かめるような流れが強めです。
+                  そのため、反応が静かでも気持ちが薄いとは限りません。
+                </div>
+              </section>
 
-<div style={{
-background:'#fff7ed',
-border:'1px solid #fdba74',
-borderRadius:'14px',
-padding:'16px',
-textAlign:'center',
-marginTop:'20px'
-}}>
+              <section style={{ marginBottom: '28px' }}>
+                <div
+                  style={{
+                    fontSize: '18px',
+                    fontWeight: 900,
+                    color: '#ff9ce8',
+                    marginBottom: '12px',
+                  }}
+                >
+                  今後の流れ
+                </div>
+                <div
+                  style={{
+                    color: 'rgba(255,255,255,0.92)',
+                    fontSize: '17px',
+                    lineHeight: 2,
+                  }}
+                >
+                  今は少し見えにくい感情が、水面下で育ちやすい流れです。
+                  すぐの変化より、あとから効いてくる接点を大切にする日です。
+                </div>
+              </section>
 
-<p style={{marginBottom:'12px'}}>
-もっと詳しい鑑定結果や深い相性を知りたい方は有料版をご利用ください
-</p>
+              <section style={{ marginBottom: '28px' }}>
+                <div
+                  style={{
+                    fontSize: '18px',
+                    fontWeight: 900,
+                    color: '#ff9ce8',
+                    marginBottom: '12px',
+                  }}
+                >
+                  アドバイス
+                </div>
+                <div
+                  style={{
+                    color: 'rgba(255,255,255,0.92)',
+                    fontSize: '17px',
+                    lineHeight: 2,
+                  }}
+                >
+                  今日は、駆け引きを増やすより“安心して話せる空気”を作る方が結果につながります。
+                  あなたは我慢を言葉にしない傾向があるため、落ち着いた本音を少し見せると良いでしょう。
+                </div>
+              </section>
 
-<button
-onClick={handleProClick}
-style={{
-padding:'12px 20px',
-borderRadius:'10px',
-border:'none',
-background:'#ea580c',
-color:'white',
-fontWeight:'bold',
-cursor:'pointer'
-}}
->
-有料版はこちら
-</button>
+              <div
+                style={{
+                  marginTop: '34px',
+                  padding: '18px 20px',
+                  borderRadius: '20px',
+                  textAlign: 'center',
+                  fontWeight: 900,
+                  fontSize: '18px',
+                  color: '#ffe86f',
+                  background: 'rgba(56, 27, 6, 0.62)',
+                  border: '1px solid rgba(255,215,0,0.25)',
+                  boxShadow: '0 0 30px rgba(255,215,0,0.10)',
+                }}
+              >
+                この先は、まだ誰にも見せていない
+                <br />
+                「相手の本音・未来・決定的な転機」です
+              </div>
 
-</div>
+              <div
+                style={{
+                  marginTop: '22px',
+                  borderRadius: '26px',
+                  padding: '28px 20px',
+                  background:
+                    'linear-gradient(180deg, rgba(9, 5, 20, 0.98) 0%, rgba(14, 8, 30, 0.98) 100%)',
+                  border: '1px solid rgba(255,255,255,0.08)',
+                  boxShadow:
+                    'inset 0 0 40px rgba(255,255,255,0.03), 0 0 50px rgba(124,92,255,0.10)',
+                  textAlign: 'center',
+                }}
+              >
+                <div
+                  style={{
+                    fontSize: '36px',
+                    fontWeight: 900,
+                    lineHeight: 1.35,
+                    marginBottom: '12px',
+                  }}
+                >
+                  続きは完全版で
+                  <span
+                    style={{
+                      background: 'linear-gradient(90deg, #ffffff, #ffd95f)',
+                      WebkitBackgroundClip: 'text',
+                      WebkitTextFillColor: 'transparent',
+                    }}
+                  >
+                    ご覧いただけます
+                  </span>
+                </div>
 
-</div>
-</div>
+                <div
+                  style={{
+                    color: 'rgba(255,255,255,0.84)',
+                    fontSize: '18px',
+                    lineHeight: 1.9,
+                    maxWidth: '560px',
+                    margin: '0 auto 20px',
+                  }}
+                >
+                  ここまで読んだあなたは、もう気づいているはずです。
+                  <br />
+                  この恋は、ただの偶然ではありません。
+                </div>
 
+                <div
+                  style={{
+                    display: 'grid',
+                    gap: '12px',
+                    maxWidth: '520px',
+                    margin: '0 auto 24px',
+                  }}
+                >
+                  {[
+                    '相手が本当に考えていること',
+                    '二人の未来',
+                    '関係が動くタイミング',
+                  ].map((item) => (
+                    <div
+                      key={item}
+                      style={{
+                        position: 'relative',
+                        overflow: 'hidden',
+                        borderRadius: '16px',
+                        padding: '16px',
+                        background: 'rgba(255,255,255,0.04)',
+                        border: '1px solid rgba(255,255,255,0.05)',
+                        color: 'rgba(255,255,255,0.88)',
+                        fontWeight: 800,
+                        fontSize: '17px',
+                        filter: 'blur(1.6px)',
+                        opacity: 0.82,
+                      }}
+                    >
+                      {item}
+                    </div>
+                  ))}
+                </div>
+
+                <button
+                  style={{
+                    border: 'none',
+                    width: '100%',
+                    maxWidth: '520px',
+                    height: '72px',
+                    borderRadius: '999px',
+                    cursor: 'pointer',
+                    color: '#fff',
+                    fontSize: '24px',
+                    fontWeight: 900,
+                    letterSpacing: '0.03em',
+                    background: 'linear-gradient(90deg, #ea36ff, #8f5cff, #5967ff)',
+                    boxShadow:
+                      '0 0 26px rgba(234,54,255,0.40), 0 0 58px rgba(89,103,255,0.24)',
+                  }}
+                  onClick={() => {
+                    window.location.href = 'https://note.com/like_swan6953/n/nf547dbe67453';
+                  }}
+                >
+                  完全版を今すぐ見る
+                </button>
+
+                <div
+                  style={{
+                    marginTop: '14px',
+                    color: 'rgba(255,255,255,0.56)',
+                    fontSize: '13px',
+                    fontWeight: 600,
+                  }}
+                >
+                  いちばん大切な部分だけ、この先で公開しています
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        <div
+          style={{
+            textAlign: 'center',
+            marginTop: '30px',
+            color: 'rgba(255,255,255,0.35)',
+            fontSize: '13px',
+            fontWeight: 600,
+          }}
+        >
+          m★ke ver.3.1 free
+        </div>
+      </div>
+    </div>
   );
 }
