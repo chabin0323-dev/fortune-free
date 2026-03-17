@@ -578,6 +578,7 @@ export default function CompatibilityFreePage() {
                 style={{
                   position: 'relative',
                   marginTop: '6px',
+                  minHeight: '760px',
                 }}
               >
                 <div
@@ -639,7 +640,7 @@ export default function CompatibilityFreePage() {
                     </div>
                   </section>
 
-                  <section style={{ marginBottom: '10px' }}>
+                  <section style={{ marginBottom: '28px' }}>
                     <div
                       style={{
                         fontSize: '18px',
@@ -661,6 +662,29 @@ export default function CompatibilityFreePage() {
                       それは偶然のように見えて、実は必然に近い流れです。
                       完全版では、その転機がいつ訪れやすいのか、
                       そして相手が本当に望んでいる関係の形まで詳しく読み解きます。
+                    </div>
+                  </section>
+
+                  <section style={{ marginBottom: '28px' }}>
+                    <div
+                      style={{
+                        fontSize: '18px',
+                        fontWeight: 900,
+                        color: '#ff9ce8',
+                        marginBottom: '12px',
+                      }}
+                    >
+                      深層メッセージ
+                    </div>
+                    <div
+                      style={{
+                        color: 'rgba(255,255,255,0.92)',
+                        fontSize: '17px',
+                        lineHeight: 2,
+                      }}
+                    >
+                      あなたが感じている迷いは、終わりではなく“始まりの前触れ”です。
+                      本当に知るべきなのは、相手の本音と、二人がどこで交わるかという運命の接点です。
                     </div>
                   </section>
                 </div>
@@ -779,4 +803,38 @@ export default function CompatibilityFreePage() {
                         window.location.href = 'https://note.com/like_swan6953/n/nf547dbe67453';
                       }}
                     >
-                      完全版を今す
+                      完全版を今すぐ見る
+                    </button>
+
+                    <div
+                      style={{
+                        marginTop: '12px',
+                        color: 'rgba(255,255,255,0.56)',
+                        fontSize: '13px',
+                        fontWeight: 600,
+                      }}
+                    >
+                      無料版では核心部分を非公開にしています
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        <div
+          style={{
+            textAlign: 'center',
+            marginTop: '30px',
+            color: 'rgba(255,255,255,0.35)',
+            fontSize: '13px',
+            fontWeight: 600,
+          }}
+        >
+          m★ke ver.3.1 free
+        </div>
+      </div>
+    </div>
+  );
+}
