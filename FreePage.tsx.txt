@@ -1,0 +1,145 @@
+import React, { useState } from "react";
+import { getCompatibilityFortune } from "../services/geminiService";
+import ResultCard from "../components/ResultCard";
+import LoadingSpinner from "../components/LoadingSpinner";
+
+export default function FreePage() {
+
+const [name1,setName1] = useState("");
+const [name2,setName2] = useState("");
+
+const [result,setResult] = useState<any>(null);
+const [loading,setLoading] = useState(false);
+
+const handleFortune = async () => {
+
+if(!name1 || !name2){
+alert("名前を入力してください");
+return;
+}
+
+setLoading(true);
+
+try{
+
+const res = await getCompatibilityFortune(
+name1,
+name2,
+"A",
+"牡羊座",
+"子 (ね)",
+"2000-01-01",
+null,
+null,
+null,
+"恋人",
+"today"
+);
+
+setResult(res);
+
+}catch(e){
+alert("鑑定エラー");
+}
+
+setLoading(false);
+
+};
+
+return(
+
+<div style={{padding:"40px",color:"white"}}>
+
+<h1>無料相性占い</h1>
+
+<div style={{marginTop:"20px"}}>
+
+<input
+placeholder="あなたの名前"
+value={name1}
+onChange={(e)=>setName1(e.target.value)}
+style={{padding:"10px",marginRight:"10px"}}
+/>
+
+<input
+placeholder="お相手の名前"
+value={name2}
+onChange={(e)=>setName2(e.target.value)}
+style={{padding:"10px"}}
+/>
+
+</div>
+
+<button
+onClick={handleFortune}
+style={{
+marginTop:"20px",
+padding:"15px 30px",
+fontSize:"18px",
+background:"#7c3aed",
+color:"white",
+border:"none",
+borderRadius:"8px"
+}}
+>
+
+無料で相性を占う
+
+</button>
+
+{loading && <LoadingSpinner/>}
+
+{result && (
+
+<div style={{marginTop:"40px"}}>
+
+<ResultCard result={result} names={{name1,name2}} dateStr="今日"/>
+
+<div
+style={{
+marginTop:"30px",
+padding:"30px",
+background:"#2a0b3f",
+borderRadius:"15px",
+textAlign:"center"
+}}
+>
+
+<h2>ここから先は完全版で確認できます</h2>
+
+<p style={{marginTop:"10px"}}>
+・相手の本音  
+・恋愛の進展可能性  
+・3か月後の未来  
+・ベストアプローチ  
+</p>
+
+<a
+href="https://compatibility-fortune-telling.vercel.app/"
+style={{
+display:"inline-block",
+marginTop:"20px",
+padding:"15px 30px",
+background:"#facc15",
+color:"black",
+borderRadius:"10px",
+fontWeight:"bold",
+textDecoration:"none"
+}}
+>
+
+相手の本音を確認する
+
+</a>
+
+</div>
+
+</div>
+
+)}
+
+</div>
+
+);
+
+}
