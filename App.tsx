@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+src/pages/CompatibilityFreePage.tsx
 import CompatibilityFreePage from './pages/CompatibilityFreePage';
 
 function HomePage() {
