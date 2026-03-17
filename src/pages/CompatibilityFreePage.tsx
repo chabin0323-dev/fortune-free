@@ -9,7 +9,7 @@ export default function CompatibilityFreePage() {
         minHeight: '100vh',
         padding: '40px 20px',
         background: 'linear-gradient(180deg, #1a0f2e, #0d0618)',
-        color: '#fff',
+        color: '#ffffff',
         fontFamily: 'sans-serif',
       }}
     >
@@ -17,7 +17,6 @@ export default function CompatibilityFreePage() {
         AI相性占い（無料版）
       </h1>
 
-      {/* ボタン */}
       <button
         onClick={() => setShowResult(true)}
         style={{
@@ -34,15 +33,12 @@ export default function CompatibilityFreePage() {
         運命を占う
       </button>
 
-      {/* 結果 */}
       {showResult && (
         <div style={{ marginTop: '40px' }}>
-          {/* 見える部分 */}
           <div style={{ marginBottom: '30px' }}>
             <h2 style={{ color: '#ff9ce8' }}>総合鑑定</h2>
             <p style={{ lineHeight: 2 }}>
               二人の相性は非常に良く、ゆっくりと関係が深まる流れにあります。
-              焦らず信頼を育てることで、特別な関係へと進展していきます。
             </p>
           </div>
 
@@ -50,13 +46,10 @@ export default function CompatibilityFreePage() {
             <h2 style={{ color: '#ff9ce8' }}>相手の気持ち</h2>
             <p style={{ lineHeight: 2 }}>
               相手はあなたに対して強い興味と安心感を持っています。
-              ただし、今はまだ慎重に距離を測っている段階です。
             </p>
           </div>
 
-          {/* ▼ぼかしゾーン */}
           <div style={{ position: 'relative', marginTop: '20px' }}>
-            {/* ぼかし本体 */}
             <div
               style={{
                 filter: 'blur(8px)',
@@ -69,7 +62,6 @@ export default function CompatibilityFreePage() {
                 <h2 style={{ color: '#ff9ce8' }}>二人の未来</h2>
                 <p style={{ lineHeight: 2 }}>
                   この関係は時間と共に特別な絆へと変わります。
-                  ある時期を境に、急激に距離が縮まる可能性があります。
                 </p>
               </div>
 
@@ -77,20 +69,17 @@ export default function CompatibilityFreePage() {
                 <h2 style={{ color: '#ff9ce8' }}>関係が動く時期</h2>
                 <p style={{ lineHeight: 2 }}>
                   近いうちに重要な変化が訪れます。
-                  そのタイミングを逃さないことが鍵になります。
                 </p>
               </div>
 
               <div style={{ marginBottom: '30px' }}>
                 <h2 style={{ color: '#ff9ce8' }}>決定的な転機</h2>
                 <p style={{ lineHeight: 2 }}>
-                  二人の未来には大きな転機があります。
                   完全版ではその詳細を明らかにします。
                 </p>
               </div>
             </div>
 
-            {/* 上にかぶせる */}
             <div
               style={{
                 position: 'absolute',
